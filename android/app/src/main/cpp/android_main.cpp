@@ -85,10 +85,6 @@ int RunDimensionsAndroid() {
     return EXIT_FAILURE;
   }
 
-  if (!dimensions::android::EnsureTouchGamepad()) {
-    DLOGE("Touch gamepad could not be attached: %s", SDL_GetError());
-  }
-
   const std::string external = AndroidExternalDir();
   if (external.empty()) {
     DLOGE("SDL_GetAndroidExternalStoragePath returned no path");
@@ -181,6 +177,11 @@ int RunDimensionsAndroid() {
 
     std::unique_ptr<rex::ui::WindowedApp> app = creator(app_context);
     if (app->OnInitialize()) {
+      // Attach only after ReXGlue's SDL input driver has installed its event
+      // watch. Attaching before OnInitialize can lose SDL_EVENT_GAMEPAD_ADDED.
+      if (!dimensions::android::EnsureTouchGamepad()) {
+        REXLOG_ERROR("Touch gamepad could not be attached: {}", SDL_GetError());
+      }
       result = app_context.RunMainMessageLoop();
     } else {
       REXLOG_ERROR("LegodimensionsApp::OnInitialize failed");

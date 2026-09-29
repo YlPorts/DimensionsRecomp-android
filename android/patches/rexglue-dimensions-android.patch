@@ -28,3 +28,20 @@ diff --git a/src/input/input_system.cpp b/src/input/input_system.cpp
 +#endif
      }
    }
+
+diff --git a/src/input/sdl/sdl_input_driver.cpp b/src/input/sdl/sdl_input_driver.cpp
+--- a/src/input/sdl/sdl_input_driver.cpp
++++ b/src/input/sdl/sdl_input_driver.cpp
+@@ -170,7 +170,11 @@ void SDLInputDriver::EnumerateDevices(std::vector<DeviceInfo>& out) {
+     SDL_GUIDToString(SDL_GetJoystickGUID(SDL_GetGamepadJoystick(controller.sdl)), guid_text,
+                      static_cast<int>(sizeof(guid_text)));
+     info.guid = guid_text;
+-    info.synthetic = false;
++    // The Android overlay is a virtual SDL gamepad, but it should merge into
++    // guest user 0 instead of consuming a physical-controller ordinal.
++    // Physical pads remain assigned by connection order.
++    info.synthetic = info.name == "Dimensions Touch Controller";
++    info.preferred_user = 0;
+     out.push_back(info);
+   }
+ }

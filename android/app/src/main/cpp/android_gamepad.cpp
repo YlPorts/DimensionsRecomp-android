@@ -91,7 +91,7 @@ bool EnsureTouchGamepadLocked() {
 }
 
 void SetStickLocked(int stick, float x, float y) {
-  if (!EnsureTouchGamepadLocked()) {
+  if (!g_virtual_joystick) {
     return;
   }
 
@@ -105,7 +105,7 @@ void SetStickLocked(int stick, float x, float y) {
 }
 
 void SetTriggerLocked(int side, float value) {
-  if (!EnsureTouchGamepadLocked()) {
+  if (!g_virtual_joystick) {
     return;
   }
   const int axis = side == 0 ? SDL_GAMEPAD_AXIS_LEFT_TRIGGER
