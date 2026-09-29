@@ -67,10 +67,10 @@ jobs:
             -DREXGLUE_USE_D3D12=OFF \
             -DREXGLUE_USE_VULKAN=ON
 
-      - name: Compile Android core and UI
+      - name: Compile Android runtime and Xenos Vulkan renderer
         shell: bash
         run: |
           "$ANDROID_HOME/cmake/3.31.1/bin/cmake" \
             --build build/rexglue-android \
-            --target rexcore rexui \
+            --target rexcore rexui rexgpu-xenos \
             --parallel 2
