@@ -1,7 +1,7 @@
 diff --git a/src/input/input_system.cpp b/src/input/input_system.cpp
 --- a/src/input/input_system.cpp
 +++ b/src/input/input_system.cpp
-@@ -24,7 +24,9 @@
+@@ -24,8 +24,10 @@
  #include <rex/input/input_system.h>
  #include <rex/input/mnk/mnk_input_driver.h>
  #include <rex/input/nop/nop_input_driver.h>
@@ -12,7 +12,7 @@ diff --git a/src/input/input_system.cpp b/src/input/input_system.cpp
  #include <rex/input/sdl/sdl_input_driver.h>
  #include <rex/input/state_merge.h>
  #include <rex/input/xinput/xinput_input_driver.h>
-@@ -298,8 +300,15 @@ std::unique_ptr<InputSystem> CreateDefaultInputSystem(bool tool_mode) {
+@@ -298,7 +300,15 @@ std::unique_ptr<InputSystem> CreateDefaultInputSystem(bool tool_mode) {
        REXLOG_INFO("Portal: using the emulated ToyPad.");
        input->SetPortal(std::make_unique<EmulatedToypad>());
      } else {
