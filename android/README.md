@@ -33,7 +33,18 @@ crash/graphics validation and Samsung A15 performance tuning.
 The repository intentionally does **not** contain the hundreds of megabytes of
 machine-generated recompiled code or copyrighted LEGO Dimensions game data.
 
-First follow `../README-dev.md` and generate:
+For an Android build, **prepare the Android ReXGlue tree first**, then
+run codegen. The Android patch changes the generated PPC memory barriers and
+physical-memory address handling for ARM64; a `generated/` tree created before
+the patch is not safe to reuse even if it still compiles.
+
+```bash
+chmod +x android/prepare-rexglue.sh
+./android/prepare-rexglue.sh
+# Then follow ../README-dev.md and regenerate from your own dump / TU23.
+```
+
+The finished tree must contain:
 
 ```
 rexlego/generated/default/sources.cmake
@@ -41,7 +52,8 @@ rexlego/generated/default/legodimensions_pch.h
 ...generated source files...
 ```
 
-from your own Xbox 360 LEGO Dimensions dump / TU23.
+If you generated these files before preparing ReXGlue for Android, force a
+regeneration (or remove the old codegen stamp) before building the APK.
 
 ## Android prerequisites
 
