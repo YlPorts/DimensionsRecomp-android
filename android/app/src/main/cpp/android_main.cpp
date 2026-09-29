@@ -136,6 +136,11 @@ int RunDimensionsAndroid() {
   // shared library packaged next to libmain.so.
   args.emplace_back("--gpu_plugin=xenos");
   args.emplace_back("--gpu_backend=vulkan");
+  // Mobile Vulkan implementations may omit optional desktop-style features.
+  // ReXGlue has primitive/fill fallbacks already, so don't reject a device
+  // merely because these two optional features are absent.
+  args.emplace_back("--vulkan_require_geometry_shader=false");
+  args.emplace_back("--vulkan_require_fill_mode_non_solid=false");
   args.emplace_back("--fullscreen=true");
 
   // SDL handles both physical Android gamepads and the touch bridge we'll add
