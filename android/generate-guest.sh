@@ -39,10 +39,9 @@ if [[ -z "$TU_XEXP" ]]; then
   exit 4
 fi
 
-# ReXGlue's XEX loader discovers the title update as <xex path> + "p".
-# Keep one canonical lowercase sibling because the generated Android runtime
-# also validates this exact layout before launch.
-GAME_XEXP="$GAME_ROOT/default.xexp"
+# ReXGlue's XEX loader discovers the title update as <exact xex path> + "p".
+# Preserve the XEX filename's case: on Linux Default.xex requires Default.xexp.
+GAME_XEXP="${BASE_XEX}p"
 if [[ "$(cd "$(dirname "$TU_XEXP")" && pwd)/$(basename "$TU_XEXP")" != "$GAME_XEXP" ]]; then
   echo "Installing TU23 executable patch beside Default.xex..."
   cp -f "$TU_XEXP" "$GAME_XEXP"
