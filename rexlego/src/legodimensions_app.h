@@ -99,6 +99,16 @@ class LegodimensionsApp : public rex::ReXApp {
   // Runs before the runtime is built, which is the only point where the update
   // folder can still be swapped for the modded copy.
   void OnConfigurePaths(rex::PathConfig& paths) override {
+#if REX_PLATFORM_ANDROID
+    // Android packages native libraries under a read-only nativeLibraryDir.
+    // Keep the editable TOML beside saves instead, where the F4/F8 overlays
+    // can persist settings without storage permissions.
+    if (!paths.user_data_root.empty()) {
+      std::error_code ec;
+      std::filesystem::create_directories(paths.user_data_root, ec);
+      paths.config_path = paths.user_data_root / "legodimensions.toml";
+    }
+#endif
     legodimensions::mods::ResolveUpdateRoot(paths);
   }
 
