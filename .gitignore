@@ -15,6 +15,7 @@
 !/rexlego/
 !/rexlego-installer/
 !/DimensionsModManager-CLI/
+!/android/
 
 # Submodules. Only the gitlink and .gitmodules are tracked, never their
 # contents - but the catch-all above would hide even the gitlink.
