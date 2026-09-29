@@ -5,7 +5,8 @@ on:
     branches:
       - android-port-bootstrap
     paths:
-      - "android/**"
+      - "android/prepare-rexglue.sh"
+      - "android/patches/**"
       - ".github/workflows/android-bootstrap.yml"
   workflow_dispatch:
 
@@ -20,8 +21,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # The pinned SDK revision has one stale gitlink without a URL.
-          # android/prepare-rexglue.sh initializes the valid SDK dependencies.
           submodules: false
 
       - name: Java 17

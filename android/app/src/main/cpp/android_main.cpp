@@ -59,6 +59,23 @@ void EnsureDirectory(const std::filesystem::path& path) {
   std::filesystem::create_directories(path, ec);
 }
 
+bool HasDefaultXex(const std::filesystem::path& root) {
+  std::error_code ec;
+  for (const auto& entry : std::filesystem::directory_iterator(root, ec)) {
+    if (!entry.is_regular_file(ec)) {
+      continue;
+    }
+    std::string name = entry.path().filename().string();
+    for (char& c : name) {
+      c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+    if (name == "default.xex") {
+      return true;
+    }
+  }
+  return false;
+}
+
 int RunDimensionsAndroid() {
   if (!SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
     DLOGE("SDL_InitSubSystem failed: %s", SDL_GetError());
@@ -84,8 +101,9 @@ int RunDimensionsAndroid() {
   EnsureDirectory(cache_root);
   EnsureDirectory(log_root);
 
-  if (!std::filesystem::exists(game_root / "default.xex")) {
-    DLOGE("Missing %s", (game_root / "default.xex").string().c_str());
+  if (!HasDefaultXex(game_root)) {
+    DLOGE("No Default.xex found directly under %s", game_root.string().c_str());
+    return EXIT_FAILURE;
   }
 
   const std::string library_dir = NativeLibraryDir();
@@ -103,17 +121,23 @@ int RunDimensionsAndroid() {
   args.emplace_back(fmt::format("--cache_root={}", cache_root.string()));
   args.emplace_back(fmt::format("--log_file={}", (log_root / "legodimensions.log").string()));
 
-  // Required on Android: the GPU backend is a shared plugin next to libmain.so.
+  // Android is Vulkan-only in this port. The Xenos backend is a runtime-loaded
+  // shared library packaged next to libmain.so.
   args.emplace_back("--gpu_plugin=xenos");
+  args.emplace_back("--gpu_backend=vulkan");
   args.emplace_back("--fullscreen=true");
+
+  // SDL handles both physical Android gamepads and the touch bridge we'll add
+  // on top. ToyPad protocol emulation stays native in ReXGlue.
+  args.emplace_back("--input_backend=sdl");
+  args.emplace_back("--toypad_emulation=true");
 
   // Desktop companion processes do not exist on Android.
   args.emplace_back("--discord_rpc=false");
   args.emplace_back("--updates_check=false");
   args.emplace_back("--toypad_app_autostart=false");
 
-  // Let big.LITTLE scheduling move guest threads instead of pinning Xbox 360
-  // affinity masks to arbitrary mobile cores.
+  // Let Android's big.LITTLE scheduler move guest threads freely.
   args.emplace_back("--ignore_thread_affinities=true");
   args.emplace_back("--ignore_thread_priorities=true");
 

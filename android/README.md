@@ -1,25 +1,31 @@
 # Dimensions Recompiled — Android bootstrap
 
-This directory is the first Android/ARM64 bring-up layer for Dimensions
-Recompiled. It is built around the existing ReXGlue recompiler rather than an
+This directory is the Android/ARM64 bring-up layer for Dimensions Recompiled.
+It uses the existing ReXGlue static recompilation pipeline — it is not an
 emulator wrapper.
 
-## What this milestone wires up
+## Current status
 
-- Android application package (arm64-v8a only).
-- SDL3 activity/window/event loop.
-- Vulkan presentation through ReXGlue's Xenos GPU plugin.
-- Android-safe application, save, shader-cache and log directories.
-- The existing `LegodimensionsApp` and generated PPC-to-C++ code.
-- A temporary pinned Android compatibility patch for ReXGlue 0.10.0.
+Already wired and CI-validated:
 
-Touch controls, a Storage Access Framework game-data importer, Toy Pad UI and
-performance tuning intentionally come after the first native boot.
+- Android arm64-v8a platform support in ReXGlue.
+- SDL3 Android window/event layer.
+- Vulkan presentation and the Xenos GPU plugin.
+- ReXGlue runtime, UI and `rexgpu-xenos` all compile for Android ARM64.
+- App-specific game, update, save, shader-cache and log directories.
+- Storage Access Framework launcher that imports the extracted base game and
+  TU23 without broad storage permissions.
+- Existing `LegodimensionsApp` host code and generated PPC-to-C++ code path.
+- Native emulated ToyPad path; physical USB passthrough falls back safely on
+  Android until an Android USB-host bridge exists.
+
+Still after the first complete game APK/boot: touch controls, an Android ToyPad
+figure UI and Samsung A15 performance tuning.
 
 ## Important: generated game code is not in Git
 
 The repository intentionally does **not** contain the hundreds of megabytes of
-generated recompiled code or copyrighted LEGO Dimensions game data.
+machine-generated recompiled code or copyrighted LEGO Dimensions game data.
 
 First follow `../README-dev.md` and generate:
 
@@ -52,25 +58,27 @@ revision: it contains an old FidelityFX gitlink without a URL. The preparation
 script initializes the ReXGlue submodule and only the nested dependencies that
 are actually declared in its `.gitmodules`.
 
-The compatibility patch is pinned to a specific public revision so it cannot
-silently change. It is temporary: the goal is to replace it with a maintained
-Android SDK fork once the bring-up is stable.
+The compatibility patch is pinned to a specific public revision and then the
+Dimensions-specific Android fix is applied from `android/patches/`.
 
-## Data layout for the first boot
+## Game-data setup on the phone
 
-The bootstrap creates these folders under Android's app-specific external
-storage:
+The app now launches into a setup screen. Pick the **extracted base-game
+folder whose root contains `Default.xex`**, then optionally pick the extracted
+TU23 folder. Android's Storage Access Framework grants read access and the
+launcher copies the selected trees into:
 
 ```
 Android/data/com.ylports.dimensionsrecomp/files/
-  game/       # extracted base game; default.xex must be here
-  update/     # extracted TU23/update tree
-  userdata/   # saves/profile data
-  cache/      # shader/runtime cache
-  logs/       # legodimensions.log
+  game/
+  update/
+  userdata/
+  cache/
+  logs/
 ```
 
-This avoids broad storage permissions on Android 11+.
+No broad storage permission is requested. The imported copy belongs to the app,
+so keep the original dump elsewhere before uninstalling.
 
 ## Build
 
@@ -85,13 +93,14 @@ gradle :app:assembleDebug
 The native configure intentionally fails with a clear message if
 `rexlego/generated/default/sources.cmake` is absent.
 
-## First bring-up checklist
+## Bring-up checklist
 
-1. CMake config reaches the patched ReXGlue Android platform.
-2. `libmain.so` and `librexgpu-xenos.so` build for arm64-v8a.
-3. SDLActivity opens a landscape surface.
-4. ReXGlue finds `--gpu_plugin=xenos`.
-5. The runtime maps guest memory and loads the generated image.
-6. Vulkan presents the first frame.
-7. Only after that: touch controller, data importer, Toy Pad workflow and
-   Samsung A15 performance profiling.
+- [x] ReXGlue configures as Android arm64-v8a.
+- [x] ReXGlue runtime/UI compile on Android.
+- [x] Xenos Vulkan renderer compiles and links on Android.
+- [x] Scoped-storage game/TU importer exists.
+- [ ] Full `libmain.so` build with locally generated Dimensions sources.
+- [ ] First game frame on a physical Android device.
+- [ ] Touch controller.
+- [ ] In-app ToyPad figure management.
+- [ ] Samsung A15 profiling and 60 FPS tuning.
