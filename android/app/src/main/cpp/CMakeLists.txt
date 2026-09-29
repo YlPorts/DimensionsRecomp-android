@@ -67,7 +67,7 @@ extern const rex::PPCImageInfo PPCImageConfig;
 ]=])
 
     file(WRITE "${REX_GEN_DIR}/legodimensions_stub.cpp" [=[
-#include "legodimensions_pch.h"
+#include "legodimensions_init.h"
 const rex::PPCImageInfo PPCImageConfig{};
 ]=])
 
