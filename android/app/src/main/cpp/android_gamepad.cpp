@@ -19,12 +19,12 @@ SDL_Joystick* g_virtual_joystick = nullptr;
 constexpr int kButtonCount = 14;
 
 constexpr SDL_GamepadButton kButtonMap[kButtonCount] = {
-    SDL_GAMEPAD_BUTTON_SOUTH,          // A
-    SDL_GAMEPAD_BUTTON_EAST,           // B
-    SDL_GAMEPAD_BUTTON_WEST,           // X
-    SDL_GAMEPAD_BUTTON_NORTH,          // Y
-    SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,  // LB
-    SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, // RB
+    SDL_GAMEPAD_BUTTON_SOUTH,           // A
+    SDL_GAMEPAD_BUTTON_EAST,            // B
+    SDL_GAMEPAD_BUTTON_WEST,            // X
+    SDL_GAMEPAD_BUTTON_NORTH,           // Y
+    SDL_GAMEPAD_BUTTON_LEFT_SHOULDER,   // LB
+    SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER,  // RB
     SDL_GAMEPAD_BUTTON_BACK,
     SDL_GAMEPAD_BUTTON_START,
     SDL_GAMEPAD_BUTTON_LEFT_STICK,
@@ -58,7 +58,7 @@ bool EnsureTouchGamepadLocked() {
   SDL_VirtualJoystickDesc desc{};
   SDL_INIT_INTERFACE(&desc);
   desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
-  desc.vendor_id = 0x045E;   // Microsoft-style identity for Xbox glyph/layout.
+  desc.vendor_id = 0x045E;
   desc.product_id = 0x028E;
   desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
   desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
@@ -69,7 +69,7 @@ bool EnsureTouchGamepadLocked() {
   g_virtual_id = SDL_AttachVirtualJoystick(&desc);
   if (!g_virtual_id) {
     SDL_LogError(SDL_LOG_CATEGORY_INPUT,
-                 "Dimensions touch controller: SDL_AttachVirtualJoystick failed: %s",
+                 "Dimensions touch controller: attach failed: %s",
                  SDL_GetError());
     return false;
   }
@@ -77,7 +77,7 @@ bool EnsureTouchGamepadLocked() {
   g_virtual_joystick = SDL_OpenJoystick(g_virtual_id);
   if (!g_virtual_joystick) {
     SDL_LogError(SDL_LOG_CATEGORY_INPUT,
-                 "Dimensions touch controller: SDL_OpenJoystick failed: %s",
+                 "Dimensions touch controller: open failed: %s",
                  SDL_GetError());
     SDL_DetachVirtualJoystick(g_virtual_id);
     g_virtual_id = 0;
@@ -140,25 +140,37 @@ void ShutdownTouchGamepad() {
   }
 }
 
+void SetTouchStick(int stick, float x, float y) {
+  std::lock_guard<std::mutex> lock(g_gamepad_mutex);
+  SetStickLocked(stick == 0 ? 0 : 1, x, y);
+}
+
+void SetTouchTrigger(int side, float value) {
+  std::lock_guard<std::mutex> lock(g_gamepad_mutex);
+  SetTriggerLocked(side == 0 ? 0 : 1, value);
+}
+
+void SetTouchButton(int button, bool down) {
+  std::lock_guard<std::mutex> lock(g_gamepad_mutex);
+  SetButtonLocked(button, down);
+}
+
 }  // namespace dimensions::android
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_ylports_dimensions_TouchGamepadView_nativeSetStick(
     JNIEnv*, jclass, jint stick, jfloat x, jfloat y) {
-  std::lock_guard<std::mutex> lock(dimensions::android::g_gamepad_mutex);
-  dimensions::android::SetStickLocked(stick == 0 ? 0 : 1, x, y);
+  dimensions::android::SetTouchStick(stick, x, y);
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_ylports_dimensions_TouchGamepadView_nativeSetTrigger(
     JNIEnv*, jclass, jint side, jfloat value) {
-  std::lock_guard<std::mutex> lock(dimensions::android::g_gamepad_mutex);
-  dimensions::android::SetTriggerLocked(side == 0 ? 0 : 1, value);
+  dimensions::android::SetTouchTrigger(side, value);
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_ylports_dimensions_TouchGamepadView_nativeSetButton(
     JNIEnv*, jclass, jint button, jboolean down) {
-  std::lock_guard<std::mutex> lock(dimensions::android::g_gamepad_mutex);
-  dimensions::android::SetButtonLocked(button, down == JNI_TRUE);
+  dimensions::android::SetTouchButton(button, down == JNI_TRUE);
 }

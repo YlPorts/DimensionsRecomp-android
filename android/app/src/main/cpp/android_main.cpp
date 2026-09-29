@@ -6,6 +6,7 @@
 #include <dlfcn.h>
 #include <jni.h>
 
+#include <cctype>
 #include <cstdlib>
 #include <filesystem>
 #include <memory>
@@ -22,6 +23,8 @@
 #include <rex/thread.h>
 #include <rex/ui/windowed_app.h>
 #include <rex/ui/windowed_app_context_sdl.h>
+
+#include "android_gamepad.h"
 
 #if REX_PLATFORM_ANDROID
 
@@ -80,6 +83,10 @@ int RunDimensionsAndroid() {
   if (!SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
     DLOGE("SDL_InitSubSystem failed: %s", SDL_GetError());
     return EXIT_FAILURE;
+  }
+
+  if (!dimensions::android::EnsureTouchGamepad()) {
+    DLOGE("Touch gamepad could not be attached: %s", SDL_GetError());
   }
 
   const std::string external = AndroidExternalDir();
@@ -181,6 +188,7 @@ int RunDimensionsAndroid() {
     app->InvokeOnDestroy();
   }
 
+  dimensions::android::ShutdownTouchGamepad();
   return result;
 }
 

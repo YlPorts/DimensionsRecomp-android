@@ -7,6 +7,8 @@ on:
     paths:
       - "android/prepare-rexglue.sh"
       - "android/patches/**"
+      - "android/app/src/main/cpp/android_gamepad.cpp"
+      - "android/app/src/main/cpp/android_gamepad.h"
       - ".github/workflows/android-bootstrap.yml"
   workflow_dispatch:
 
@@ -48,6 +50,16 @@ jobs:
       - name: Prepare ReXGlue Android tree
         shell: bash
         run: ./android/prepare-rexglue.sh
+
+      - name: Compile touch-controller JNI bridge
+        shell: bash
+        run: |
+          CXX="$ANDROID_HOME/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android28-clang++"
+          "$CXX" -std=c++23 -fPIC -Wall -Wextra -Werror \
+            -Irexglue-sdk/thirdparty/sdl3/include \
+            -Iandroid/app/src/main/cpp \
+            -c android/app/src/main/cpp/android_gamepad.cpp \
+            -o /tmp/android_gamepad.o
 
       - name: Configure ReXGlue for arm64-v8a
         shell: bash

@@ -95,6 +95,7 @@ set(LEGODIMENSIONS_HOST_SOURCES
 
 add_library(main SHARED
     android_main.cpp
+    android_gamepad.cpp
     ${LEGODIMENSIONS_HOST_SOURCES}
     "${REXSDK_DIR}/src/ui/rex_app.cpp"
 )
