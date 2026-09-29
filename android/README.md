@@ -37,17 +37,20 @@ from your own Xbox 360 LEGO Dimensions dump / TU23.
 - Android NDK `27.2.12479018`.
 - CMake 3.31.1.
 - Java 17.
-- Git submodules checked out recursively.
 
 ## Prepare ReXGlue for Android
 
 From the repository root:
 
 ```bash
-git submodule update --init --recursive
 chmod +x android/prepare-rexglue.sh
 ./android/prepare-rexglue.sh
 ```
+
+Do **not** use a blanket `git submodule update --init --recursive` on this SDK
+revision: it contains an old FidelityFX gitlink without a URL. The preparation
+script initializes the ReXGlue submodule and only the nested dependencies that
+are actually declared in its `.gitmodules`.
 
 The compatibility patch is pinned to a specific public revision so it cannot
 silently change. It is temporary: the goal is to replace it with a maintained
