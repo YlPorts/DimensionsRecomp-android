@@ -61,8 +61,7 @@ public final class MainActivity extends SDLActivity {
         // it is accepting loopback connections.
         new Thread(() -> {
             for (int attempt = 0; attempt < 12; attempt++) {
-                if (ToyPadClient.canConnect()) {
-                    ToyPadClient.restoreActive(this);
+                if (ToyPadClient.canConnect() && ToyPadClient.restoreActive(this)) {
                     return;
                 }
                 try {
