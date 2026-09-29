@@ -91,8 +91,10 @@ the APK:
 ```
 
 Use `release` instead of `debug` for a release APK. Code generation runs on
-the development computer, so it needs a **host** ReXGlue CLI executable. The
-script searches common SDK output locations; if yours is elsewhere, set:
+the development computer, so it needs a **host** ReXGlue CLI executable. On a
+clean checkout the script builds that host CLI automatically with Clang 18+ and
+Ninja. If you already have a host build elsewhere, you can skip that step by
+setting:
 
 ```bash
 REXGLUE_CODEGEN=/absolute/path/to/rexglue \
