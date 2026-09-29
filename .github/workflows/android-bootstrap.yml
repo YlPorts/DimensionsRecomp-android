@@ -18,7 +18,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive
+          # The pinned SDK revision has one stale gitlink without a URL.
+          # android/prepare-rexglue.sh initializes the valid SDK dependencies.
+          submodules: false
 
       - name: Java 17
         uses: actions/setup-java@v4
@@ -39,7 +41,7 @@ jobs:
             "ndk;27.2.12479018" \
             "cmake;3.31.1"
 
-      - name: Apply ReXGlue Android compatibility layer
+      - name: Prepare ReXGlue Android tree
         shell: bash
         run: ./android/prepare-rexglue.sh
 
