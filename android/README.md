@@ -12,6 +12,8 @@ Already wired and CI-validated:
 - SDL3 Android window/event layer.
 - Vulkan presentation and the Xenos GPU plugin.
 - ReXGlue runtime, UI and `rexgpu-xenos` all compile for Android ARM64.
+- Host-smoke `libmain.so` link and APK packaging are CI-validated, including
+  16 KB Android page alignment checks.
 - App-specific game, update, save, shader-cache and log directories.
 - Storage Access Framework launcher that imports the extracted base game and
   TU23 without broad storage permissions.
@@ -20,6 +22,11 @@ Already wired and CI-validated:
   Android until an Android USB-host bridge exists.
 - In-app seven-slot Toy Pad manager for 180-byte NTAG213 figure dumps, with
   saved figure state restored into the native loopback ToyPad on the next run.
+- Writable Android-side config/cheat paths under `userdata/`.
+- Launcher diagnostics can copy/share device information and the tail of the
+  native `legodimensions.log`.
+- Mobile Vulkan fallbacks are enabled for geometry shaders, non-solid fill and
+  graphics-stage memexport features when the driver does not expose them.
 
 The Android shell also has a multi-touch Xbox-style controller backed by an
 SDL3 virtual gamepad, so touch and physical controllers both use ReXGlue's
@@ -61,6 +68,9 @@ regeneration (or remove the old codegen stamp) before building the APK.
 - Android NDK `27.2.12479018`.
 - CMake 3.31.1.
 - Java 17.
+- For automatic host codegen on Linux: Clang 18+, Ninja, libc++/libc++abi and
+  X11-XCB/Wayland development headers. On Ubuntu, for example:
+  `sudo apt install clang-18 ninja-build libc++-18-dev libc++abi-18-dev libx11-xcb-dev libwayland-dev`.
 
 ## Prepare ReXGlue for Android
 
@@ -139,6 +149,10 @@ wrapper committed with the port:
 cd android
 ./gradlew :app:assembleDebug
 ```
+
+The CI smoke APK is installable for testing the Android launcher/importer and
+native packaging, but it is **not a game build**: its guest PPC code is replaced
+with link stubs.
 
 The normal native configure intentionally fails with a clear message if
 `rexlego/generated/default/sources.cmake` is absent. CI can pass
