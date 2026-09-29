@@ -18,6 +18,7 @@
 
 #include <rex/cvar.h>
 #include <rex/logging.h>
+#include <rex/runtime.h>
 #include <rex/system/kernel_state.h>
 #include <rex/system/xmemory.h>
 #include <rex/ui/imgui_dialog.h>
@@ -36,6 +37,14 @@ constexpr size_t kMaxListed = 200;
 // applied while it is closed.
 std::unique_ptr<CheatEngine> g_engine;
 
+std::filesystem::path CheatSavePath() {
+  const std::string user_root = REXCVAR_GET(user_data_root);
+  if (!user_root.empty()) {
+    return std::filesystem::path(user_root) / "cheats_5752084B.txt";
+  }
+  return std::filesystem::path("cheats_5752084B.txt");
+}
+
 CheatEngine* Engine() {
   if (!g_engine) {
     auto* ks = rex::system::kernel_state();
@@ -43,7 +52,7 @@ CheatEngine* Engine() {
       return nullptr;
     }
     g_engine =
-        std::make_unique<CheatEngine>(ks->memory(), std::filesystem::path("cheats_5752084B.txt"));
+        std::make_unique<CheatEngine>(ks->memory(), CheatSavePath());
   }
   return g_engine.get();
 }
