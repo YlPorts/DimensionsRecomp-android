@@ -100,12 +100,12 @@ so keep the original dump elsewhere before uninstalling.
 
 ## Build
 
-Open `android/` in Android Studio and build the `app` module, or use a local
-Gradle installation:
+Open `android/` in Android Studio and build the `app` module, or use the
+wrapper committed with the port:
 
 ```bash
 cd android
-gradle :app:assembleDebug
+./gradlew :app:assembleDebug
 ```
 
 The normal native configure intentionally fails with a clear message if
