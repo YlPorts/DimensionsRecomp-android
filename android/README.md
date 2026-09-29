@@ -79,6 +79,30 @@ are actually declared in its `.gitmodules`.
 The compatibility patch is pinned to a specific public revision and then the
 Dimensions-specific Android fix is applied from `android/patches/`.
 
+## One-command real APK build
+
+Once you have your own extracted base game and extracted TU23, the Android
+wrapper can prepare the SDK, install `Default.xexp` beside `Default.xex`,
+force a fresh Android-safe codegen pass, validate the ARM64 markers, and build
+the APK:
+
+```bash
+./android/build-from-dump.sh /path/to/LegoDimensions /path/to/TU23 debug
+```
+
+Use `release` instead of `debug` for a release APK. Code generation runs on
+the development computer, so it needs a **host** ReXGlue CLI executable. The
+script searches common SDK output locations; if yours is elsewhere, set:
+
+```bash
+REXGLUE_CODEGEN=/absolute/path/to/rexglue \
+  ./android/build-from-dump.sh /path/to/LegoDimensions /path/to/TU23 debug
+```
+
+The generated ~470 MB guest tree remains local and gitignored. The script never
+puts game data into the APK; on the phone, the setup screen still imports the
+user's extracted base game and TU23 into app-specific storage.
+
 ## Game-data setup on the phone
 
 The app now launches into a setup screen. Pick the **extracted base-game
@@ -126,7 +150,7 @@ playable game build.
 - [x] ReXGlue runtime/UI compile on Android.
 - [x] Xenos Vulkan renderer compiles and links on Android.
 - [x] Scoped-storage game/TU importer exists.
-- [ ] Full `libmain.so` build with locally generated Dimensions sources.
+- [ ] Full `libmain.so` build with locally generated Dimensions sources (build path automated; local guest data still required).
 - [ ] First game frame on a physical Android device.
 - [x] Multi-touch controller through an SDL3 virtual gamepad.
 - [x] In-app ToyPad figure management (Java/protocol path CI-validated).
