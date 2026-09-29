@@ -4,8 +4,11 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
+import android.view.Gravity;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.FrameLayout;
 
 import org.libsdl.app.SDLActivity;
 
@@ -36,6 +39,40 @@ public final class MainActivity extends SDLActivity {
         // This overlay talks to one SDL virtual joystick, so both touch input
         // and a physical Android controller use ReXGlue's normal SDL backend.
         touchGamepad = TouchGamepadView.install(this);
+
+        Button toyPadButton = new Button(this);
+        toyPadButton.setText("Toy Pad");
+        toyPadButton.setAlpha(0.78f);
+        toyPadButton.setOnClickListener(
+            v -> startActivity(new Intent(this, ToyPadActivity.class))
+        );
+        FrameLayout.LayoutParams toyPadParams = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.TOP | Gravity.CENTER_HORIZONTAL
+        );
+        toyPadParams.topMargin = Math.round(
+            6f * getResources().getDisplayMetrics().density
+        );
+        addContentView(toyPadButton, toyPadParams);
+
+        // Re-place figures that were active in the previous session. The
+        // native ToyPad listener starts on the SDL game thread, so retry until
+        // it is accepting loopback connections.
+        new Thread(() -> {
+            for (int attempt = 0; attempt < 12; attempt++) {
+                if (ToyPadClient.canConnect()) {
+                    ToyPadClient.restoreActive(this);
+                    return;
+                }
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }, "ToyPadRestore").start();
     }
 
     @Override
