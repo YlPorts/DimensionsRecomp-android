@@ -36,5 +36,10 @@
             android:exported="false"
             android:launchMode="singleTask"
             android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name="com.ylports.dimensions.ToyPadActivity"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape" />
     </application>
 </manifest>
