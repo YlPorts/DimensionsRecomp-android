@@ -76,10 +76,12 @@ fi
 if [[ -z "$CODEGEN" || ! -x "$CODEGEN" ]]; then
   echo "Host ReXGlue CLI not found; building rexglue codegen tool..."
   HOST_BUILD="$ROOT/android/.host-rexglue-build"
+  HOST_CC="${CC:-clang}"
+  HOST_CXX="${CXX:-clang++}"
   cmake -S "$ROOT/rexglue-sdk" -B "$HOST_BUILD" -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_C_COMPILER=clang \
-    -DCMAKE_CXX_COMPILER=clang++ \
+    -DCMAKE_C_COMPILER="$HOST_CC" \
+    -DCMAKE_CXX_COMPILER="$HOST_CXX" \
     -DREXGLUE_BUILD_TOOLS=ON \
     -DREXGLUE_BUILD_TESTS=OFF \
     -DREXGLUE_ENABLE_TRACY=OFF \
