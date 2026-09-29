@@ -108,7 +108,7 @@ final class ToyPadClient {
         }
     }
 
-    static void restoreActive(Context context) {
+    static boolean restoreActive(Context context) {
         for (int slot = 0; slot < 7; slot++) {
             if (!isActive(context, slot) || !slotFile(context, slot).isFile()) {
                 continue;
@@ -116,11 +116,13 @@ final class ToyPadClient {
             try {
                 load(context, slot);
             } catch (IOException ignored) {
-                // The native ToyPad listener may still be starting. MainActivity
-                // retries the whole restore sequence shortly afterwards.
-                return;
+                // The native ToyPad listener may still be starting, or a
+                // connection may have been dropped between slots. Tell the
+                // caller to retry the complete active-slot set.
+                return false;
             }
         }
+        return true;
     }
 
     static boolean canConnect() {
