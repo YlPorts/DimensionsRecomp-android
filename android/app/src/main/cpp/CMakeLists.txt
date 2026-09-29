@@ -94,7 +94,44 @@ extern const rex::PPCImageInfo PPCImageConfig;
 
     file(WRITE "${REX_GEN_DIR}/legodimensions_stub.cpp" [=[
 #include "legodimensions_init.h"
+#include <rex/ppc/context.h>
+
 const rex::PPCImageInfo PPCImageConfig{};
+
+// The real generated guest library supplies these symbols. Host smoke mode
+// links without copyrighted/generated guest code, so provide weak no-op
+// fallbacks for every guest entry referenced directly by the handwritten
+// Dimensions host sources. Strong hook definitions in the host override these.
+#define DIMENSIONS_SMOKE_GUEST_STUB(name) \
+  extern "C" __attribute__((weak)) void name(PPCContext&, uint8_t*) {}
+
+DIMENSIONS_SMOKE_GUEST_STUB(__imp__sub_82A3D980);
+DIMENSIONS_SMOKE_GUEST_STUB(__imp__sub_82F03C40);
+DIMENSIONS_SMOKE_GUEST_STUB(__imp__sub_82FBE7A8);
+DIMENSIONS_SMOKE_GUEST_STUB(__imp__sub_82FE4A80);
+DIMENSIONS_SMOKE_GUEST_STUB(__imp__sub_83470AF8);
+DIMENSIONS_SMOKE_GUEST_STUB(__imp__sub_834B8168);
+DIMENSIONS_SMOKE_GUEST_STUB(__imp__sub_836F5AD0);
+DIMENSIONS_SMOKE_GUEST_STUB(__imp__sub_83715F00);
+
+DIMENSIONS_SMOKE_GUEST_STUB(sub_82A3D980);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_82A435C8);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_82D70708);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_82EF9560);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_82EFEFA0);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_82F03C40);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_82F0D340);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_82FBE7A8);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_82FE4A80);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_83470AF8);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_834B8168);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_836F5AD0);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_83715F00);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_83835180);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_83835188);
+DIMENSIONS_SMOKE_GUEST_STUB(sub_83A0AB68);
+
+#undef DIMENSIONS_SMOKE_GUEST_STUB
 ]=])
 
     set(REX_GEN_SOURCES "${REX_GEN_DIR}/legodimensions_stub.cpp")
