@@ -18,13 +18,15 @@ Already wired and CI-validated:
 - Existing `LegodimensionsApp` host code and generated PPC-to-C++ code path.
 - Native emulated ToyPad path; physical USB passthrough falls back safely on
   Android until an Android USB-host bridge exists.
+- In-app seven-slot Toy Pad manager for 180-byte NTAG213 figure dumps, with
+  saved figure state restored into the native loopback ToyPad on the next run.
 
 The Android shell also has a multi-touch Xbox-style controller backed by an
 SDL3 virtual gamepad, so touch and physical controllers both use ReXGlue's
 normal SDL input path.
 
-Still after the first complete game APK/boot: an Android ToyPad figure UI,
-device-side crash/graphics validation and Samsung A15 performance tuning.
+Still after the first complete game APK/boot: device-side Toy Pad validation,
+crash/graphics validation and Samsung A15 performance tuning.
 
 ## Important: generated game code is not in Git
 
@@ -109,5 +111,5 @@ playable game build.
 - [ ] Full `libmain.so` build with locally generated Dimensions sources.
 - [ ] First game frame on a physical Android device.
 - [x] Multi-touch controller through an SDL3 virtual gamepad.
-- [ ] In-app ToyPad figure management.
+- [x] In-app ToyPad figure management (Java/protocol path CI-validated).
 - [ ] Samsung A15 profiling and 60 FPS tuning.
