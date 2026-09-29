@@ -20,6 +20,7 @@
 #include <rex/filesystem.h>
 #include <rex/logging.h>
 #include <rex/rex_app.h>
+#include <rex/runtime.h>
 #include <rex/system/file_fixups.h>
 #include <rex/ui/imgui_dialog.h>
 
@@ -255,6 +256,16 @@ std::vector<ModEntry> Discover() {
 
 std::string Quote(const std::string& s) { return "\"" + s + "\""; }
 
+std::filesystem::path ConfigPath() {
+#if REX_PLATFORM_ANDROID
+  const std::string user_root = REXCVAR_GET(user_data_root);
+  if (!user_root.empty()) {
+    return std::filesystem::path(user_root) / "legodimensions.toml";
+  }
+#endif
+  return rex::filesystem::GetExecutableFolder() / "legodimensions.toml";
+}
+
 // cmd.exe strips the outer pair of quotes from the whole command line, so a
 // command whose program path is quoted needs a second pair around everything.
 int RunQuoted(const std::string& command) {
@@ -352,7 +363,7 @@ void SyncSelectionWithFolders() {
   REXCVAR_SET(mods, JoinList(kept));
   // Only the one line: this runs before the GPU plugin has registered its
   // settings, and a full SaveConfig here drops every one of them.
-  const std::filesystem::path toml = rex::filesystem::GetExecutableFolder() / "legodimensions.toml";
+  const std::filesystem::path toml = ConfigPath();
   std::ifstream in(toml, std::ios::binary);
   if (!in) {
     return;
@@ -451,7 +462,7 @@ class ModMenuDialog final : public rex::ui::ImGuiDialog {
 
     const std::string selection = JoinList(folders);
     REXCVAR_SET(mods, selection);
-    rex::cvar::SaveConfig(rex::filesystem::GetExecutableFolder() / "legodimensions.toml");
+    rex::cvar::SaveConfig(ConfigPath());
 
     status_ = selection.empty() ? "All off. Restart for vanilla."
                                 : "Applied. Restart to load.";

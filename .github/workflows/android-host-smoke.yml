@@ -1,0 +1,82 @@
+name: Android host smoke
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - android-port-bootstrap
+    paths:
+      - "android/app/src/main/cpp/**"
+      - "android/prepare-rexglue.sh"
+      - "android/patches/**"
+      - "rexlego/src/**"
+      - ".github/workflows/android-host-smoke.yml"
+  workflow_dispatch:
+
+jobs:
+  host-link:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Android NDK and CMake
+        shell: bash
+        run: |
+          SDKMANAGER="$(
+            find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print |
+              sort -V |
+              tail -n 1
+          )"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "ndk;27.2.12479018" \
+            "cmake;3.31.1"
+
+      - name: Prepare ReXGlue Android tree
+        shell: bash
+        run: ./android/prepare-rexglue.sh
+
+      - name: Configure full Android host smoke build
+        shell: bash
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.2.12479018"
+          "$ANDROID_HOME/cmake/3.31.1/bin/cmake" \
+            -S android/app/src/main/cpp \
+            -B build/android-host \
+            -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake" \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-28 \
+            -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DREX_PROJECT_ROOT="$GITHUB_WORKSPACE" \
+            -DREXSDK_DIR="$GITHUB_WORKSPACE/rexglue-sdk" \
+            -DREX_PORT_DIR="$GITHUB_WORKSPACE/rexlego" \
+            -DREX_ANDROID_HOST_SMOKE=ON
+
+      - name: Compile and link libmain.so
+        shell: bash
+        run: |
+          "$ANDROID_HOME/cmake/3.31.1/bin/cmake" \
+            --build build/android-host \
+            --target main \
+            --parallel 2

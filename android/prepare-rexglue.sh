@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SDK="$ROOT/rexglue-sdk"
+CACHE="$ROOT/android/.cache"
+BASE_PATCH="$CACHE/rexglue-v0.10.0-android.patch"
+LOCAL_PATCH="$ROOT/android/patches/rexglue-dimensions-android.patch"
+
+# Temporary compatibility layer while Android support is split into a
+# maintained SDK fork. The base patch supplies Android/arm64, ANativeWindow,
+# bionic/ucontext, JNI filesystem glue and SDL3 platform fixes.
+PATCH_URL="https://raw.githubusercontent.com/Player124413/Sonic-Generations-recomp-android-and-pc-edition/a163e7d5cb9464056d8e34ab55f84fe38459a979/android/patches/rexglue-sdk-v0.10.0-android.patch"
+
+# Do not use a blanket --recursive update here. This ReXGlue revision contains
+# a stale thirdparty/FidelityFX-SDK gitlink with no matching .gitmodules entry.
+# FidelityFX is disabled on Android anyway. Initialize the SDK first, then only
+# the nested submodules actually declared by its .gitmodules.
+git -C "$ROOT" submodule sync -- rexglue-sdk
+git -C "$ROOT" submodule update --init rexglue-sdk
+
+mapfile -t SDK_SUBMODULES < <(
+  git -C "$SDK" config -f .gitmodules --get-regexp '^submodule\..*\.path$' |
+    awk '{print $2}'
+)
+
+if (( ${#SDK_SUBMODULES[@]} > 0 )); then
+  git -C "$SDK" submodule update --init --recursive -- "${SDK_SUBMODULES[@]}"
+fi
+
+mkdir -p "$CACHE"
+if [[ ! -s "$BASE_PATCH" ]]; then
+  echo "Fetching pinned ReXGlue Android compatibility patch..."
+  curl --fail --location --retry 3 "$PATCH_URL" -o "$BASE_PATCH"
+fi
+
+apply_patch_once() {
+  local file="$1"
+  local label="$2"
+  if git -C "$SDK" apply --reverse --check "$file" >/dev/null 2>&1; then
+    echo "$label is already applied."
+    return
+  fi
+  echo "Checking $label..."
+  git -C "$SDK" apply --check "$file"
+  git -C "$SDK" apply "$file"
+  echo "$label applied."
+}
+
+apply_patch_once "$BASE_PATCH" "ReXGlue Android compatibility layer"
+apply_patch_once "$LOCAL_PATCH" "Dimensions Android ReXGlue fixes"

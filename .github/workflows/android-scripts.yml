@@ -1,0 +1,35 @@
+name: Android build scripts
+
+on:
+  push:
+    branches:
+      - android-port-bootstrap
+    paths:
+      - "android/*.sh"
+      - ".github/workflows/android-scripts.yml"
+  workflow_dispatch:
+
+jobs:
+  shell:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate shell syntax
+        shell: bash
+        run: |
+          bash -n android/prepare-rexglue.sh
+          bash -n android/generate-guest.sh
+          bash -n android/build-android.sh
+          bash -n android/build-from-dump.sh
+
+      - name: Verify executable build entrypoints
+        shell: bash
+        run: |
+          test -x android/prepare-rexglue.sh
+          test -x android/generate-guest.sh
+          test -x android/build-android.sh
+          test -x android/build-from-dump.sh
