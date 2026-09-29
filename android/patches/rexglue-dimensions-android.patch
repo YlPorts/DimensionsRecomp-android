@@ -1,0 +1,30 @@
+diff --git a/src/input/input_system.cpp b/src/input/input_system.cpp
+--- a/src/input/input_system.cpp
++++ b/src/input/input_system.cpp
+@@ -24,7 +24,9 @@
+ #include <rex/input/input_system.h>
+ #include <rex/input/mnk/mnk_input_driver.h>
+ #include <rex/input/nop/nop_input_driver.h>
+ #include <rex/input/portal/emulated_toypad.h>
++#if REX_PLATFORM_WIN32
+ #include <rex/input/portal/hardware_portal.h>
++#endif
+ #include <rex/input/sdl/sdl_input_driver.h>
+ #include <rex/input/state_merge.h>
+ #include <rex/input/xinput/xinput_input_driver.h>
+@@ -298,8 +300,15 @@ std::unique_ptr<InputSystem> CreateDefaultInputSystem(bool tool_mode) {
+       REXLOG_INFO("Portal: using the emulated ToyPad.");
+       input->SetPortal(std::make_unique<EmulatedToypad>());
+     } else {
++#if REX_PLATFORM_WIN32
+       REXLOG_INFO("Portal: using a physical portal over USB.");
+       input->SetPortal(std::make_unique<HardwarePortal>());
++#else
++      // The physical USB portal backend currently depends on the desktop
++      // libusb path. Android uses the emulated portal until a Java USB host
++      // bridge is implemented.
++      REXLOG_WARN("Portal: physical USB passthrough is unavailable on Android; using emulation.");
++      input->SetPortal(std::make_unique<EmulatedToypad>());
++#endif
+     }
+   }
