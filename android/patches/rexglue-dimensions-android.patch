@@ -67,3 +67,100 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 +endif()
  
  # Add tests subdirectory if tests are enabled
+
+diff --git a/src/ui/vulkan/vulkan_device.cpp b/src/ui/vulkan/vulkan_device.cpp
+--- a/src/ui/vulkan/vulkan_device.cpp
++++ b/src/ui/vulkan/vulkan_device.cpp
+@@ -23,12 +23,12 @@
+ #include <rex/ui/vulkan/device.h>
+ 
+ REXCVAR_DEFINE_BOOL(vulkan_require_fragment_stores_and_atomics, true, "UI/Vulkan",
+-                    "Deprecated and ignored for parity; fragmentStoresAndAtomics is always "
+-                    "required for Vulkan GPU emulation")
++                    "Require fragmentStoresAndAtomics for Vulkan GPU emulation; disabling "
++                    "allows shaders without supported fragment memexport to run")
+     .lifecycle(rex::cvar::Lifecycle::kInitOnly);
+ REXCVAR_DEFINE_BOOL(vulkan_require_vertex_pipeline_stores_and_atomics, true, "UI/Vulkan",
+-                    "Deprecated and ignored for parity; vertexPipelineStoresAndAtomics is always "
+-                    "required for Vulkan GPU emulation")
++                    "Require vertexPipelineStoresAndAtomics for Vulkan GPU emulation; disabling "
++                    "allows compute/fallback paths where available")
+     .lifecycle(rex::cvar::Lifecycle::kInitOnly);
+ // Apple Silicon / MoltenVK does not expose geometryShader or fillModeNonSolid;
+ // default both to false on macOS so the device can still be selected.
+@@ -110,18 +110,24 @@ std::unique_ptr<VulkanDevice> VulkanDevice::CreateIfSupported(
+           properties.deviceName);
+       return nullptr;
+     }
+-    if (!supported_features.fragmentStoresAndAtomics) {
++    if (REXCVAR_GET(vulkan_require_fragment_stores_and_atomics) &&
++        !supported_features.fragmentStoresAndAtomics) {
+       REXLOG_WARN(
+           "Vulkan device '{}' doesn't support fragmentStoresAndAtomics, which "
+-          "is required for Vulkan GPU emulation parity",
++          "is required because vulkan_require_fragment_stores_and_atomics=true",
+           properties.deviceName);
+       return nullptr;
+     }
+-    if (!supported_features.vertexPipelineStoresAndAtomics) {
++    if (!supported_features.fragmentStoresAndAtomics) {
++      REXLOG_WARN("Vulkan device '{}' lacks fragmentStoresAndAtomics; fragment "
++                  "shader memexport will be unavailable", properties.deviceName);
++    }
++    if (REXCVAR_GET(vulkan_require_vertex_pipeline_stores_and_atomics) &&
++        !supported_features.vertexPipelineStoresAndAtomics) {
+       REXLOG_WARN(
+           "Vulkan device '{}' doesn't support vertexPipelineStoresAndAtomics, which "
+-          "is required for Vulkan GPU emulation parity",
++          "is required because vulkan_require_vertex_pipeline_stores_and_atomics=true",
+           properties.deviceName);
+       return nullptr;
+     }
++    if (!supported_features.vertexPipelineStoresAndAtomics) {
++      REXLOG_WARN("Vulkan device '{}' lacks vertexPipelineStoresAndAtomics; "
++                  "vertex memexport will use fallback paths where possible", properties.deviceName);
++    }
+     if (REXCVAR_GET(vulkan_require_geometry_shader) && !supported_features.geometryShader) {
+       REXLOG_WARN(
+           "Vulkan device '{}' doesn't support geometryShader, but "
+
+diff --git a/src/graphics/vulkan/command_processor.cpp b/src/graphics/vulkan/command_processor.cpp
+--- a/src/graphics/vulkan/command_processor.cpp
++++ b/src/graphics/vulkan/command_processor.cpp
+@@ -922,18 +922,26 @@ bool VulkanCommandProcessor::SetupContext() {
+         "Vulkan draw resolution scaling is experimental and may not affect all "
+         "titles correctly");
+   }
+-  if (!device_properties.fragmentStoresAndAtomics) {
++  if (REXCVAR_GET(vulkan_require_fragment_stores_and_atomics) &&
++      !device_properties.fragmentStoresAndAtomics) {
+     REXGPU_ERROR(
+-        "Vulkan fragmentStoresAndAtomics is required for GPU emulation and "
+-        "D3D12 parity, but unsupported by the selected device");
++        "Vulkan fragmentStoresAndAtomics is required by configuration, but "
++        "unsupported by the selected device");
+     return false;
+   }
+-  if (!device_properties.vertexPipelineStoresAndAtomics) {
++  if (!device_properties.fragmentStoresAndAtomics) {
++    REXGPU_WARN(
++        "Vulkan fragmentStoresAndAtomics unavailable; fragment shader "
++        "memory export instructions will be skipped");
++  }
++  if (REXCVAR_GET(vulkan_require_vertex_pipeline_stores_and_atomics) &&
++      !device_properties.vertexPipelineStoresAndAtomics) {
+     REXGPU_ERROR(
+-        "Vulkan vertexPipelineStoresAndAtomics is required for GPU emulation and "
+-        "D3D12 parity, but unsupported by the selected device");
++        "Vulkan vertexPipelineStoresAndAtomics is required by configuration, "
++        "but unsupported by the selected device");
+     return false;
+   }
++  if (!device_properties.vertexPipelineStoresAndAtomics) {
++    REXGPU_WARN(
++        "Vulkan vertexPipelineStoresAndAtomics unavailable; vertex shader "
++        "memory export will use compute/fallback paths where possible");
++  }
+   if (!device_properties.geometryShader) {
+     if (REXCVAR_GET(vulkan_require_geometry_shader)) {
+       REXGPU_ERROR(
