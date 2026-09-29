@@ -24,6 +24,32 @@ if(NOT REX_ANDROID_HOST_SMOKE AND
         "see README-dev.md and android/README.md.")
 endif()
 
+# Android/ARM64 needs generated code produced by the patched codegen templates:
+# PPC sync/lwsync/eieio must become real host fences, and the physical-memory
+# host offset is resolved dynamically for Android page layouts. A desktop-era
+# generated tree may compile successfully and then fail nondeterministically,
+# so reject it early rather than shipping a subtly incorrect APK.
+if(NOT REX_ANDROID_HOST_SMOKE)
+    set(REX_ANDROID_PCH "${REX_PORT_DIR}/generated/default/legodimensions_pch.h")
+    if(NOT EXISTS "${REX_ANDROID_PCH}")
+        message(FATAL_ERROR
+            "Missing generated/default/legodimensions_pch.h. "
+            "Run android/prepare-rexglue.sh before regenerating the game.")
+    endif()
+    file(READ "${REX_ANDROID_PCH}" REX_ANDROID_PCH_TEXT)
+    string(FIND "${REX_ANDROID_PCH_TEXT}" "g_guest_phys_host_offset"
+           REX_ANDROID_PHYS_OFFSET_MARKER)
+    string(FIND "${REX_ANDROID_PCH_TEXT}" "REX_SYNC_FENCE"
+           REX_ANDROID_FENCE_MARKER)
+    if(REX_ANDROID_PHYS_OFFSET_MARKER EQUAL -1 OR
+       REX_ANDROID_FENCE_MARKER EQUAL -1)
+        message(FATAL_ERROR
+            "The generated Dimensions sources predate the Android ARM64 codegen fixes. "
+            "Run ./android/prepare-rexglue.sh, then regenerate rexlego/generated/default "
+            "from your own patched TU23 dump (force codegen / remove the old codegen stamp).")
+    endif()
+endif()
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
