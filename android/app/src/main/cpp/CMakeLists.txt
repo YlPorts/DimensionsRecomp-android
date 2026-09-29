@@ -13,7 +13,11 @@ if(NOT EXISTS "${REXSDK_DIR}/CMakeLists.txt")
         "ReXGlue SDK is missing. Run: git submodule update --init --recursive")
 endif()
 
-if(NOT EXISTS "${REX_PORT_DIR}/generated/default/sources.cmake")
+option(REX_ANDROID_HOST_SMOKE
+    "Build the Android host against a generated-code stub (CI compile/link check only)" OFF)
+
+if(NOT REX_ANDROID_HOST_SMOKE AND
+   NOT EXISTS "${REX_PORT_DIR}/generated/default/sources.cmake")
     message(FATAL_ERROR
         "Generated recompilation sources are missing at rexlego/generated/default. "
         "Generate them from your own LEGO Dimensions Xbox 360 dump/TU23 first; "
@@ -41,20 +45,51 @@ add_subdirectory("${REXSDK_DIR}" rexglue-sdk)
 
 # ---------------------------------------------------------------------------
 # Recompiled Xbox 360 guest code.
-set(REX_GEN_DIR "${REX_PORT_DIR}/generated/default")
-include("${REX_GEN_DIR}/sources.cmake")
+#
+# The real build consumes the machine-generated sources created from the
+# player's own game dump. CI also has a host-smoke mode: it generates a tiny
+# PPCImageConfig stub so every Android-specific host source can be compiled and
+# linked without committing copyrighted/generated game code.
+if(REX_ANDROID_HOST_SMOKE)
+    set(REX_ANDROID_GENERATED_ROOT "${CMAKE_CURRENT_BINARY_DIR}/host-smoke/rexlego")
+    set(REX_GEN_DIR "${REX_ANDROID_GENERATED_ROOT}/generated/default")
+    file(MAKE_DIRECTORY "${REX_GEN_DIR}")
 
-set(REX_GEN_SOURCES "")
-foreach(src ${GENERATED_SOURCES})
-    if(IS_ABSOLUTE "${src}")
-        list(APPEND REX_GEN_SOURCES "${src}")
-    else()
-        list(APPEND REX_GEN_SOURCES "${REX_GEN_DIR}/${src}")
-    endif()
-endforeach()
+    file(WRITE "${REX_GEN_DIR}/legodimensions_init.h" [=[
+#pragma once
+#include <rex/image_info.h>
+extern const rex::PPCImageInfo PPCImageConfig;
+]=])
+
+    file(WRITE "${REX_GEN_DIR}/legodimensions_pch.h" [=[
+#pragma once
+#include <rex/image_info.h>
+]=])
+
+    file(WRITE "${REX_GEN_DIR}/legodimensions_stub.cpp" [=[
+#include "legodimensions_pch.h"
+const rex::PPCImageInfo PPCImageConfig{};
+]=])
+
+    set(REX_GEN_SOURCES "${REX_GEN_DIR}/legodimensions_stub.cpp")
+else()
+    set(REX_ANDROID_GENERATED_ROOT "${REX_PORT_DIR}")
+    set(REX_GEN_DIR "${REX_PORT_DIR}/generated/default")
+    include("${REX_GEN_DIR}/sources.cmake")
+
+    set(REX_GEN_SOURCES "")
+    foreach(src ${GENERATED_SOURCES})
+        if(IS_ABSOLUTE "${src}")
+            list(APPEND REX_GEN_SOURCES "${src}")
+        else()
+            list(APPEND REX_GEN_SOURCES "${REX_GEN_DIR}/${src}")
+        endif()
+    endforeach()
+endif()
 
 add_library(legodimensions_recomp_android STATIC ${REX_GEN_SOURCES})
 target_include_directories(legodimensions_recomp_android PRIVATE
+    "${REX_ANDROID_GENERATED_ROOT}"
     "${REX_PORT_DIR}"
     "${REX_PORT_DIR}/src"
     "${REX_GEN_DIR}"
@@ -101,6 +136,7 @@ add_library(main SHARED
 )
 
 target_include_directories(main PRIVATE
+    "${REX_ANDROID_GENERATED_ROOT}"
     "${REX_PORT_DIR}"
     "${REX_PORT_DIR}/src"
     "${REX_GEN_DIR}"
