@@ -62,8 +62,11 @@ void EnsureDirectory(const std::filesystem::path& path) {
   std::filesystem::create_directories(path, ec);
 }
 
-bool HasDefaultXex(const std::filesystem::path& root) {
+bool HasFileIgnoreCase(const std::filesystem::path& root, std::string wanted) {
   std::error_code ec;
+  for (char& c : wanted) {
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  }
   for (const auto& entry : std::filesystem::directory_iterator(root, ec)) {
     if (!entry.is_regular_file(ec)) {
       continue;
@@ -72,7 +75,7 @@ bool HasDefaultXex(const std::filesystem::path& root) {
     for (char& c : name) {
       c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     }
-    if (name == "default.xex") {
+    if (name == wanted) {
       return true;
     }
   }
@@ -104,8 +107,13 @@ int RunDimensionsAndroid() {
   EnsureDirectory(cache_root);
   EnsureDirectory(log_root);
 
-  if (!HasDefaultXex(game_root)) {
+  if (!HasFileIgnoreCase(game_root, "default.xex")) {
     DLOGE("No Default.xex found directly under %s", game_root.string().c_str());
+    return EXIT_FAILURE;
+  }
+  if (!HasFileIgnoreCase(game_root, "default.xexp")) {
+    DLOGE("No TU23 Default.xexp found beside Default.xex under %s",
+          game_root.string().c_str());
     return EXIT_FAILURE;
   }
 
