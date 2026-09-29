@@ -88,7 +88,7 @@ diff --git a/src/ui/vulkan/vulkan_device.cpp b/src/ui/vulkan/vulkan_device.cpp
      .lifecycle(rex::cvar::Lifecycle::kInitOnly);
  // Apple Silicon / MoltenVK does not expose geometryShader or fillModeNonSolid;
  // default both to false on macOS so the device can still be selected.
-@@ -110,18 +110,24 @@ std::unique_ptr<VulkanDevice> VulkanDevice::CreateIfSupported(
+@@ -110,20 +110,30 @@ std::unique_ptr<VulkanDevice> VulkanDevice::CreateIfSupported(
            properties.deviceName);
        return nullptr;
      }
@@ -127,7 +127,7 @@ diff --git a/src/ui/vulkan/vulkan_device.cpp b/src/ui/vulkan/vulkan_device.cpp
 diff --git a/src/graphics/vulkan/command_processor.cpp b/src/graphics/vulkan/command_processor.cpp
 --- a/src/graphics/vulkan/command_processor.cpp
 +++ b/src/graphics/vulkan/command_processor.cpp
-@@ -922,18 +922,26 @@ bool VulkanCommandProcessor::SetupContext() {
+@@ -922,18 +922,30 @@ bool VulkanCommandProcessor::SetupContext() {
          "Vulkan draw resolution scaling is experimental and may not affect all "
          "titles correctly");
    }
