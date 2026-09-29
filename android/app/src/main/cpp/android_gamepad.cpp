@@ -114,7 +114,10 @@ void SetTriggerLocked(int side, float value) {
 }
 
 void SetButtonLocked(int button, bool down) {
-  if (!EnsureTouchGamepadLocked() || button < 0 || button >= kButtonCount) {
+  // Never attach from the Java UI thread: ReXGlue installs its SDL input event
+  // watch during OnInitialize(), and an earlier virtual-device add event could
+  // be missed. android_main.cpp is the single owner of attachment timing.
+  if (!g_virtual_joystick || button < 0 || button >= kButtonCount) {
     return;
   }
   SDL_SetJoystickVirtualButton(g_virtual_joystick,
