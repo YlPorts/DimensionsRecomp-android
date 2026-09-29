@@ -67,7 +67,29 @@ if [[ -z "$CODEGEN" ]]; then
     fi
   done
 
+  HOST_CMAKE_STDLIB=()
+  if [[ "$(uname -s)" == "Linux" ]]; then
+    # Clang 18 + Ubuntu's libstdc++ combination hides std::expected because of
+    # feature-test macro differences. ReXGlue already uses libc++ on Android,
+    # so use libc++ for the native codegen CLI too.
+    if ! printf '#include <expected>\nint main(){std::expected<int,int> x=1;return *x;}\n' |
+         "$HOST_CXX" -std=c++23 -stdlib=libc++ -x c++ - -fsyntax-only >/dev/null 2>&1; then
+      cat >&2 <<'EOF'
+Clang libc++ development headers are required for the Linux host codegen build.
+On Ubuntu install, for example:
+  sudo apt install libc++-18-dev libc++abi-18-dev libx11-xcb-dev libwayland-dev
+EOF
+      exit 5
+    fi
+    HOST_CMAKE_STDLIB+=(
+      "-DCMAKE_CXX_FLAGS=-stdlib=libc++"
+      "-DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++"
+      "-DCMAKE_SHARED_LINKER_FLAGS=-stdlib=libc++"
+    )
+  fi
+
   cmake -S "$ROOT/rexglue-sdk" -B "$HOST_BUILD" -G Ninja \
+    "${HOST_CMAKE_STDLIB[@]}" \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_COMPILER="$HOST_CC" \
     -DCMAKE_CXX_COMPILER="$HOST_CXX" \
