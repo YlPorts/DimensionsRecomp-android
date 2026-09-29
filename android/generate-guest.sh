@@ -50,33 +50,23 @@ fi
 "$ROOT/android/prepare-rexglue.sh"
 
 CODEGEN="${REXGLUE_CODEGEN:-}"
-if [[ -z "$CODEGEN" ]]; then
-  candidates=(
-    "$ROOT/rexglue-sdk/out/install/win-amd64/bin/rexglue.exe"
-    "$ROOT/rexglue-sdk/out/install/linux-amd64/bin/rexglue"
-    "$ROOT/rexglue-sdk/out/install/mac-amd64/bin/rexglue"
-    "$ROOT/rexglue-sdk/out/build/linux-amd64-release/src/rexglue/rexglue"
-    "$ROOT/rexglue-sdk/out/build/win-amd64-release/src/rexglue/rexglue.exe"
-  )
-  for candidate in "${candidates[@]}"; do
-    if [[ -x "$candidate" ]]; then
-      CODEGEN="$candidate"
-      break
-    fi
-  done
-fi
-if [[ -z "$CODEGEN" ]] && command -v rexglue >/dev/null 2>&1; then
-  CODEGEN="$(command -v rexglue)"
-fi
 
-# A clean Android checkout normally has no host rexglue CLI yet. Build just the
-# CLI automatically with the computer's native Clang toolchain; codegen itself
-# must run on the development computer, not inside an Android cross build.
-if [[ -z "$CODEGEN" || ! -x "$CODEGEN" ]]; then
-  echo "Host ReXGlue CLI not found; building rexglue codegen tool..."
+# Unless the caller explicitly provides a codegen binary, build the CLI from
+# this exact patched SDK checkout. Reusing an arbitrary older rexglue binary
+# can generate desktop-era PCH/templates and only fail after a long codegen.
+if [[ -z "$CODEGEN" ]]; then
+  echo "Building/updating host ReXGlue CLI from the patched SDK tree..."
   HOST_BUILD="$ROOT/android/.host-rexglue-build"
   HOST_CC="${CC:-clang}"
   HOST_CXX="${CXX:-clang++}"
+
+  for tool in cmake ninja "$HOST_CC" "$HOST_CXX"; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+      echo "$tool is required to build the host ReXGlue codegen tool." >&2
+      exit 5
+    fi
+  done
+
   cmake -S "$ROOT/rexglue-sdk" -B "$HOST_BUILD" -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_C_COMPILER="$HOST_CC" \
@@ -98,8 +88,10 @@ if [[ -z "$CODEGEN" || ! -x "$CODEGEN" ]]; then
   cat >&2 <<'EOF'
 Could not build or locate a host ReXGlue codegen executable.
 ReXGlue requires a native Clang 18+ toolchain and Ninja.
+On Linux the ReXGlue UI dependency also needs x11-xcb and Wayland development
+packages (for Ubuntu: libx11-xcb-dev libwayland-dev).
 
-You can point at an existing host build explicitly:
+You can point at a known-good patched host build explicitly:
   REXGLUE_CODEGEN=/absolute/path/to/rexglue
 EOF
   exit 5
