@@ -79,6 +79,23 @@ jobs:
           grep -q 'lib/arm64-v8a/librexgpu-xenos.so' /tmp/apk-contents.txt
           grep -q 'lib/arm64-v8a/libc++_shared.so' /tmp/apk-contents.txt
 
+          # Android 15+ devices may use 16 KB memory pages. Check both the APK
+          # ZIP alignment and every native ELF PT_LOAD alignment.
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -c -P 16 -v 4 "$APK"
+
+          rm -rf /tmp/dimensions-apk-libs
+          mkdir -p /tmp/dimensions-apk-libs
+          unzip -q "$APK" 'lib/arm64-v8a/*.so' -d /tmp/dimensions-apk-libs
+          READELF="$ANDROID_HOME/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
+          for so in /tmp/dimensions-apk-libs/lib/arm64-v8a/*.so; do
+            while read -r alignment; do
+              if (( alignment < 0x4000 )); then
+                echo "$(basename "$so"): PT_LOAD alignment $alignment is below 16 KB" >&2
+                exit 1
+              fi
+            done < <("$READELF" -lW "$so" | awk '$1 == "LOAD" { print $NF }')
+          done
+
       - name: Upload smoke APK
         uses: actions/upload-artifact@v4
         with:

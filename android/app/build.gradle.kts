@@ -6,7 +6,6 @@ val projectRoot = rootProject.projectDir.parentFile
 val rexSdkDir = file("${projectRoot.absolutePath}/rexglue-sdk")
 val rexPortDir = file("${projectRoot.absolutePath}/rexlego")
 val rexHostSmoke = ((project.findProperty("rexHostSmoke") as String?) ?: "false").toBoolean()
-val hostSmoke = project.hasProperty("hostSmoke")
 
 android {
     namespace = "com.ylports.dimensions"
@@ -32,11 +31,9 @@ android {
                     "-DREX_PROJECT_ROOT=${projectRoot.absolutePath}",
                     "-DREXSDK_DIR=${rexSdkDir.absolutePath}",
                     "-DREX_PORT_DIR=${rexPortDir.absolutePath}",
-                    "-DREX_ANDROID_HOST_SMOKE=${if (rexHostSmoke) "ON" else "OFF"}"
+                    "-DREX_ANDROID_HOST_SMOKE=${if (rexHostSmoke) "ON" else "OFF"}",
+                    "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
                 )
-                if (hostSmoke) {
-                    arguments += "-DREX_ANDROID_HOST_SMOKE=ON"
-                }
                 cppFlags += listOf("-std=c++23")
             }
         }
