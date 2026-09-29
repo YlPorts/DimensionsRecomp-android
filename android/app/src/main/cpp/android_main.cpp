@@ -141,6 +141,11 @@ int RunDimensionsAndroid() {
   // merely because these two optional features are absent.
   args.emplace_back("--vulkan_require_geometry_shader=false");
   args.emplace_back("--vulkan_require_fill_mode_non_solid=false");
+  // Some mobile Vulkan drivers expose no storage-buffer writes/atomics from
+  // graphics stages. The SPIR-V translator already has memexport capability
+  // checks, so prefer degraded effects over refusing to create the device.
+  args.emplace_back("--vulkan_require_fragment_stores_and_atomics=false");
+  args.emplace_back("--vulkan_require_vertex_pipeline_stores_and_atomics=false");
   args.emplace_back("--fullscreen=true");
 
   // SDL handles both physical Android gamepads and the touch bridge we'll add
