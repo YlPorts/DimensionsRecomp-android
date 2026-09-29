@@ -69,15 +69,32 @@ fi
 if [[ -z "$CODEGEN" ]] && command -v rexglue >/dev/null 2>&1; then
   CODEGEN="$(command -v rexglue)"
 fi
+
+# A clean Android checkout normally has no host rexglue CLI yet. Build just the
+# CLI automatically with the computer's native Clang toolchain; codegen itself
+# must run on the development computer, not inside an Android cross build.
+if [[ -z "$CODEGEN" || ! -x "$CODEGEN" ]]; then
+  echo "Host ReXGlue CLI not found; building rexglue codegen tool..."
+  HOST_BUILD="$ROOT/android/.host-rexglue-build"
+  cmake -S "$ROOT/rexglue-sdk" -B "$HOST_BUILD" -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DREXGLUE_BUILD_TESTS=OFF \
+    -DREXGLUE_ENABLE_TRACY=OFF \
+    -DREXGLUE_ENABLE_FIDELITYFX=OFF
+  cmake --build "$HOST_BUILD" --target rexglue --parallel
+
+  CODEGEN="$(find "$ROOT/rexglue-sdk/out" -maxdepth 3 -type f \
+    \( -name rexglue -o -name rexglue.exe \) -perm -111 -print 2>/dev/null |
+    grep -v '/android-' | head -n 1 || true)"
+fi
+
 if [[ -z "$CODEGEN" || ! -x "$CODEGEN" ]]; then
   cat >&2 <<'EOF'
-A host ReXGlue codegen executable was not found.
+Could not build or locate a host ReXGlue codegen executable.
+ReXGlue requires a native Clang 18+ toolchain and Ninja.
 
-Build the ReXGlue CLI for your computer first (not for Android), or set:
+You can point at an existing host build explicitly:
   REXGLUE_CODEGEN=/absolute/path/to/rexglue
-
-Then run this script again. The Android patches must remain applied before
-codegen so the generated PPC C++ contains the ARM64 memory-fence fixes.
 EOF
   exit 5
 fi
