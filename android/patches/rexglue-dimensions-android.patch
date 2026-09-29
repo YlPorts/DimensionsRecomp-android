@@ -56,7 +56,7 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
  option(REXGLUE_ENABLE_DESKTOP_SDL_BACKENDS
         "Build SDL3 desktop video/audio backends (X11/Wayland/ALSA/Pulse). Turn OFF for headless CLI-only builds." ON)
  # Propagate profiling defines globally (compiled out in Release)
-@@ -310,8 +311,10 @@ add_subdirectory(src/graphics)
+@@ -310,7 +311,9 @@ add_subdirectory(src/graphics)
  add_subdirectory(src/system)
  add_subdirectory(src/kernel)
 -add_subdirectory(src/codegen)
