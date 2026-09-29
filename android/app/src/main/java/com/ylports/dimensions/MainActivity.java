@@ -20,7 +20,7 @@ public final class MainActivity extends SDLActivity {
     protected void onCreate(Bundle savedInstanceState) {
         // SetupActivity is the normal launcher, but keep this guard for direct
         // launches from adb / recents after the app data has been cleared.
-        if (!GameFiles.hasBaseGame(this)) {
+        if (!GameFiles.hasBaseGame(this) || !GameFiles.hasExecutablePatch(this)) {
             super.onCreate(savedInstanceState);
             startActivity(new Intent(this, SetupActivity.class));
             finish();
