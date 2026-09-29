@@ -82,18 +82,24 @@ Dimensions-specific Android fix is applied from `android/patches/`.
 ## Game-data setup on the phone
 
 The app now launches into a setup screen. Pick the **extracted base-game
-folder whose root contains `Default.xex`**, then optionally pick the extracted
-TU23 folder. Android's Storage Access Framework grants read access and the
+folder whose root contains `Default.xex`**, then import the extracted **TU23**
+folder whose root contains `Default.xexp`. TU23 is required because the
+recompiled guest corresponds to title update 23. Android's Storage Access Framework grants read access and the
 launcher copies the selected trees into:
 
 ```
 Android/data/com.ylports.dimensionsrecomp/files/
-  game/
-  update/
+  game/       # Default.xex plus mirrored default.xexp from TU23
+  update/     # full extracted TU23 tree
   userdata/
   cache/
   logs/
 ```
+
+ReXGlue discovers the executable patch only as a sibling of the base XEX.
+After TU23 is imported, the launcher therefore mirrors its `Default.xexp` into
+`game/default.xexp` automatically. The Start button stays disabled until both
+the base XEX and this TU23 patch are present.
 
 No broad storage permission is requested. The imported copy belongs to the app,
 so keep the original dump elsewhere before uninstalling.
