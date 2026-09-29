@@ -1,11 +1,14 @@
 package com.ylports.dimensions;
 
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Typeface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.DocumentsContract;
@@ -20,6 +23,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Locale;
 
 /**
@@ -113,6 +119,20 @@ public final class SetupActivity extends Activity {
         LinearLayout.LayoutParams startParams = matchWrap();
         startParams.topMargin = dp(18);
         content.addView(startButton, startParams);
+
+        Button copyDiagnosticButton = new Button(this);
+        copyDiagnosticButton.setText("Copiar diagnóstico");
+        copyDiagnosticButton.setOnClickListener(v -> copyDiagnostic());
+        LinearLayout.LayoutParams copyDiagnosticParams = matchWrap();
+        copyDiagnosticParams.topMargin = dp(10);
+        content.addView(copyDiagnosticButton, copyDiagnosticParams);
+
+        Button shareDiagnosticButton = new Button(this);
+        shareDiagnosticButton.setText("Compartir diagnóstico");
+        shareDiagnosticButton.setOnClickListener(v -> shareDiagnostic());
+        LinearLayout.LayoutParams shareDiagnosticParams = matchWrap();
+        shareDiagnosticParams.topMargin = dp(6);
+        content.addView(shareDiagnosticButton, shareDiagnosticParams);
 
         statusView = new TextView(this);
         statusView.setTextSize(14);
@@ -370,6 +390,66 @@ public final class SetupActivity extends Activity {
             unit++;
         }
         return String.format(Locale.US, "%.1f %s", value, units[unit]);
+    }
+
+    private String diagnosticText() {
+        StringBuilder out = new StringBuilder();
+        out.append("Dimensions Recompiled Android\n");
+        out.append("device=")
+            .append(Build.MANUFACTURER).append(' ')
+            .append(Build.MODEL).append("\n");
+        out.append("android=")
+            .append(Build.VERSION.RELEASE)
+            .append(" api=").append(Build.VERSION.SDK_INT)
+            .append("\n");
+        out.append("abis=").append(Arrays.toString(Build.SUPPORTED_ABIS)).append("\n");
+        out.append("base_game=").append(GameFiles.hasBaseGame(this)).append("\n");
+        out.append("tu23_patch=").append(GameFiles.hasExecutablePatch(this)).append("\n");
+        out.append("root=").append(GameFiles.root(this).getAbsolutePath()).append("\n");
+
+        File log = new File(GameFiles.logsDir(this), "legodimensions.log");
+        out.append("log=").append(log.getAbsolutePath()).append("\n");
+        out.append("\n--- legodimensions.log tail ---\n");
+        out.append(readLogTail(log, 128 * 1024));
+        return out.toString();
+    }
+
+    private String readLogTail(File file, int maxBytes) {
+        if (!file.isFile()) {
+            return "(sin log nativo todavía)\n";
+        }
+        try (RandomAccessFile input = new RandomAccessFile(file, "r")) {
+            long length = input.length();
+            int count = (int) Math.min(length, (long) maxBytes);
+            byte[] data = new byte[count];
+            input.seek(length - count);
+            input.readFully(data);
+            return new String(data, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            return "(no se pudo leer el log: " + e.getMessage() + ")\n";
+        }
+    }
+
+    private void copyDiagnostic() {
+        String text = diagnosticText();
+        ClipboardManager clipboard =
+            (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+        if (clipboard != null) {
+            clipboard.setPrimaryClip(
+                ClipData.newPlainText("Dimensions Recompiled diagnóstico", text)
+            );
+            if (statusView != null) {
+                statusView.setText("Diagnóstico copiado al portapapeles.");
+            }
+        }
+    }
+
+    private void shareDiagnostic() {
+        Intent send = new Intent(Intent.ACTION_SEND);
+        send.setType("text/plain");
+        send.putExtra(Intent.EXTRA_SUBJECT, "Dimensions Recompiled Android diagnóstico");
+        send.putExtra(Intent.EXTRA_TEXT, diagnosticText());
+        startActivity(Intent.createChooser(send, "Compartir diagnóstico"));
     }
 
     private void refreshState() {
