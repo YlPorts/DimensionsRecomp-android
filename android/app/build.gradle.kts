@@ -5,6 +5,7 @@ plugins {
 val projectRoot = rootProject.projectDir.parentFile
 val rexSdkDir = file("${projectRoot.absolutePath}/rexglue-sdk")
 val rexPortDir = file("${projectRoot.absolutePath}/rexlego")
+val rexHostSmoke = ((project.findProperty("rexHostSmoke") as String?) ?: "false").toBoolean()
 val hostSmoke = project.hasProperty("hostSmoke")
 
 android {
@@ -30,7 +31,8 @@ android {
                     "-DCMAKE_BUILD_TYPE=Release",
                     "-DREX_PROJECT_ROOT=${projectRoot.absolutePath}",
                     "-DREXSDK_DIR=${rexSdkDir.absolutePath}",
-                    "-DREX_PORT_DIR=${rexPortDir.absolutePath}"
+                    "-DREX_PORT_DIR=${rexPortDir.absolutePath}",
+                    "-DREX_ANDROID_HOST_SMOKE=${if (rexHostSmoke) "ON" else "OFF"}"
                 )
                 if (hostSmoke) {
                     arguments += "-DREX_ANDROID_HOST_SMOKE=ON"
