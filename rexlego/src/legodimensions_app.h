@@ -6,7 +6,9 @@
 
 #include <chrono>
 #include <cstdlib>
+#include <filesystem>
 #include <mutex>
+#include <system_error>
 #include <thread>
 
 #include <rex/logging.h>
