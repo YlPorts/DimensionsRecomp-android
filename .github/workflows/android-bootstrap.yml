@@ -13,6 +13,8 @@ jobs:
   rexglue-arm64-configure:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
 
     steps:
       - name: Checkout
@@ -23,7 +25,7 @@ jobs:
           submodules: false
 
       - name: Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -31,8 +33,12 @@ jobs:
       - name: Install Android NDK and CMake
         shell: bash
         run: |
-          SDKMANAGER="$(command -v sdkmanager)"
-          test -n "$SDKMANAGER"
+          SDKMANAGER="$(
+            find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print |
+              sort -V |
+              tail -n 1
+          )"
+          test -x "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" \
             "platforms;android-35" \
