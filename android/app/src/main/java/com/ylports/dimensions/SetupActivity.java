@@ -81,7 +81,8 @@ public final class SetupActivity extends Activity {
         description.setText(
             "Importa tu copia extraída de LEGO Dimensions para Xbox 360. " +
             "La carpeta del juego debe contener Default.xex en su raíz. " +
-            "TU23 puede importarse aparte."
+            "TU23 es obligatorio para esta recompilación y su carpeta extraída " +
+            "debe contener Default.xexp en la raíz."
         );
         description.setTextSize(16);
         LinearLayout.LayoutParams descriptionParams = matchWrap();
@@ -216,6 +217,11 @@ public final class SetupActivity extends Activity {
                         "La carpeta seleccionada no contiene Default.xex en su raíz."
                     );
                 }
+                if (!game && GameFiles.findDefaultXexp(staging) == null) {
+                    throw new IOException(
+                        "La carpeta de TU23 no contiene Default.xexp en su raíz."
+                    );
+                }
 
                 GameFiles.deleteRecursively(backup);
                 if (target.exists() && !target.renameTo(backup)) {
@@ -229,6 +235,16 @@ public final class SetupActivity extends Activity {
                     throw new IOException("No se pudo activar la importación terminada.");
                 }
                 GameFiles.deleteRecursively(backup);
+
+                // The recompiled executable is TU23. ReXGlue only discovers
+                // the patch as game:\\default.xexp, not from the separate
+                // update: mount, so keep the sibling copy synchronized.
+                if (!game || GameFiles.findDefaultXexp(GameFiles.updateDir(this)) != null) {
+                    if (!GameFiles.syncExecutablePatchFromUpdate(this) &&
+                        !GameFiles.hasExecutablePatch(this)) {
+                        throw new IOException("Falta Default.xexp de TU23.");
+                    }
+                }
             } catch (Exception e) {
                 error = e.getMessage() == null ? e.toString() : e.getMessage();
                 GameFiles.deleteRecursively(staging);
@@ -358,18 +374,24 @@ public final class SetupActivity extends Activity {
 
     private void refreshState() {
         if (statusView == null) return;
-        boolean ready = GameFiles.hasBaseGame(this);
+        boolean hasBase = GameFiles.hasBaseGame(this);
+        boolean hasPatch = GameFiles.hasExecutablePatch(this);
+        boolean ready = hasBase && hasPatch;
         importGameButton.setEnabled(!busy);
         importUpdateButton.setEnabled(!busy);
         startButton.setEnabled(!busy && ready);
 
         if (!busy && statusView.getText().length() == 0) {
             String path = GameFiles.root(this).getAbsolutePath();
-            statusView.setText(
-                ready
-                    ? "Juego base detectado. Ya puedes iniciar.\n" + path
-                    : "Falta importar el juego base.\nDestino: " + path
-            );
+            String state;
+            if (ready) {
+                state = "Juego base + TU23 detectados. Ya puedes iniciar.";
+            } else if (!hasBase) {
+                state = "Falta importar el juego base (Default.xex).";
+            } else {
+                state = "Falta importar TU23 (Default.xexp).";
+            }
+            statusView.setText(state + "\nDestino: " + path);
         }
     }
 }
