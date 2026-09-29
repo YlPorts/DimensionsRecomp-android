@@ -78,9 +78,14 @@ if [[ -z "$CODEGEN" || ! -x "$CODEGEN" ]]; then
   HOST_BUILD="$ROOT/android/.host-rexglue-build"
   cmake -S "$ROOT/rexglue-sdk" -B "$HOST_BUILD" -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_C_COMPILER=clang \
+    -DCMAKE_CXX_COMPILER=clang++ \
+    -DREXGLUE_BUILD_TOOLS=ON \
     -DREXGLUE_BUILD_TESTS=OFF \
     -DREXGLUE_ENABLE_TRACY=OFF \
-    -DREXGLUE_ENABLE_FIDELITYFX=OFF
+    -DREXGLUE_ENABLE_FIDELITYFX=OFF \
+    -DREXGLUE_ENABLE_DESKTOP_SDL_BACKENDS=OFF \
+    -DREXGLUE_USE_VULKAN=ON
   cmake --build "$HOST_BUILD" --target rexglue --parallel
 
   CODEGEN="$(find "$ROOT/rexglue-sdk/out" -maxdepth 3 -type f \
