@@ -11,6 +11,8 @@ import org.libsdl.app.SDLActivity;
 
 /** SDL3 activity hosting the native ReXGlue game runtime. */
 public final class MainActivity extends SDLActivity {
+    private TouchGamepadView touchGamepad;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // SetupActivity is the normal launcher, but keep this guard for direct
@@ -30,6 +32,18 @@ public final class MainActivity extends SDLActivity {
         if (android.os.Build.VERSION.SDK_INT >= 24) {
             window.setSustainedPerformanceMode(true);
         }
+
+        // This overlay talks to one SDL virtual joystick, so both touch input
+        // and a physical Android controller use ReXGlue's normal SDL backend.
+        touchGamepad = TouchGamepadView.install(this);
+    }
+
+    @Override
+    protected void onPause() {
+        if (touchGamepad != null) {
+            touchGamepad.releaseAll();
+        }
+        super.onPause();
     }
 
     @Override
