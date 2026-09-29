@@ -19,8 +19,12 @@ Already wired and CI-validated:
 - Native emulated ToyPad path; physical USB passthrough falls back safely on
   Android until an Android USB-host bridge exists.
 
-Still after the first complete game APK/boot: touch controls, an Android ToyPad
-figure UI and Samsung A15 performance tuning.
+The Android shell also has a multi-touch Xbox-style controller backed by an
+SDL3 virtual gamepad, so touch and physical controllers both use ReXGlue's
+normal SDL input path.
+
+Still after the first complete game APK/boot: an Android ToyPad figure UI,
+device-side crash/graphics validation and Samsung A15 performance tuning.
 
 ## Important: generated game code is not in Git
 
@@ -90,8 +94,11 @@ cd android
 gradle :app:assembleDebug
 ```
 
-The native configure intentionally fails with a clear message if
-`rexlego/generated/default/sources.cmake` is absent.
+The normal native configure intentionally fails with a clear message if
+`rexlego/generated/default/sources.cmake` is absent. CI can pass
+`-DREX_ANDROID_HOST_SMOKE=ON` to compile/link the Android host against a tiny
+generated-code stub; that verifies the port code without pretending to be a
+playable game build.
 
 ## Bring-up checklist
 
@@ -101,6 +108,6 @@ The native configure intentionally fails with a clear message if
 - [x] Scoped-storage game/TU importer exists.
 - [ ] Full `libmain.so` build with locally generated Dimensions sources.
 - [ ] First game frame on a physical Android device.
-- [ ] Touch controller.
+- [x] Multi-touch controller through an SDL3 virtual gamepad.
 - [ ] In-app ToyPad figure management.
 - [ ] Samsung A15 profiling and 60 FPS tuning.
